@@ -3,7 +3,6 @@ import tkinter as tk
 from tkinter import messagebox
 import mysql.connector
 import subprocess
-import sys
 
 # Database connection details
 DB_HOST = "localhost"
@@ -43,10 +42,10 @@ class QuizApp:
         self.score_label.place(relx=0.97, rely=0.05, anchor=tk.E)
 
         self.option_buttons = []
-        for i in range(4):
+        for i, answer in enumerate('ABCD'):
             button = tk.Button(self.canvas, text="", font=("Arial", 12))
             button.place(relx=0.5, rely=0.3 + i*0.1, anchor=tk.CENTER)
-            button.bind("<Button-1>", self.check_answer)  # Bind left mouse button click event
+            button.bind("<Button-1>", lambda event, ans=answer: self.check_answer(event, ans))  # Bind left mouse button click event with the answer
             self.option_buttons.append(button)
 
         self.display_question()
@@ -65,11 +64,9 @@ class QuizApp:
         else:
             self.show_results()
 
-    def check_answer(self, event):
-        clicked_button = event.widget
-        reply = clicked_button.cget("text")[0]  # Extracting the first character from the button text
+    def check_answer(self, event, answer):
         question = self.questions[self.current_question_index]
-        if reply == question[5]:
+        if answer == question[5]:
             messagebox.showinfo("Correct", "Correct answer!")
             self.correct_answered += 1
             self.score += 1000  # Increase the score by 1000 points for each correct answer
@@ -97,7 +94,7 @@ class QuizApp:
         self.save_score()
         self.root.destroy()
         python_executable = sys.executable
-        subprocess.call([python_executable, "homepage.py", username])  # Open the homepage interface with username
+        subprocess.call([python_executable, "homepage.py", self.username])  # Open the homepage interface with username
 
     def save_score(self):
         cur.execute("SELECT score FROM scores WHERE username = %s", (self.username,))
