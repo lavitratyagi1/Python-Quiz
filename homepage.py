@@ -32,8 +32,10 @@ class HomePage:
         subprocess.call([python_executable, "quizpage.py", subject, self.username])  # Open the quiz page interface for the selected subject
 
     def show_account(self):
+        self.root.destroy()  # Close the login window
+        python_executable = sys.executable
+        subprocess.call([python_executable, "dashboard.py", username])  # Open the homepage interface with username
         # Display account information (to be implemented)
-        pass
 
 if __name__ == "__main__":
     username = sys.argv[1] if len(sys.argv) > 1 else "User"  # Get the username from the command line arguments
