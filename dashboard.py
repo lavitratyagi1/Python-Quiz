@@ -1,15 +1,20 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 import mysql.connector
+import sys
+import subprocess
 
 class DashboardApp:
-    def __init__(self, root, username, leaderboard_app):
+    def __init__(self, root, username, rank_dict):
         self.root = root
         self.root.title("Dashboard")
         self.root.geometry("400x300")
         self.root.configure(bg="#f0f0f0")
 
         self.username = username  # Store the username for future reference
+
+        self.home_button = tk.Button(root, text="Home", command=self.go_home, bg="#1E90FF", fg="white")
+        self.home_button.place(x=10, y=10)  # Place the home button at the top left
 
         self.name_label = tk.Label(root, text="Name:", bg="#f0f0f0")
         self.name_label.pack(pady=10)
@@ -29,9 +34,6 @@ class DashboardApp:
         self.leaderboard_button = tk.Button(root, text="Go to Leaderboard", command=self.open_leaderboard, bg="#4CAF50", fg="white")
         self.leaderboard_button.pack(pady=20)
 
-        self.account_button = tk.Button(root, text="View Account", command=self.open_account, bg="#4CAF50", fg="white")
-        self.account_button.pack(pady=20)
-
         self.db_connection = mysql.connector.connect(
             host="localhost",
             user="lavitra",
@@ -40,7 +42,7 @@ class DashboardApp:
         )
         self.db_cursor = self.db_connection.cursor()
 
-        self.leaderboard_app = leaderboard_app
+        self.rank_dict = rank_dict
         self.load_user_data(username)
 
     def load_user_data(self, username):
@@ -53,27 +55,21 @@ class DashboardApp:
             self.name_value.config(text=username)
             self.score_value.config(text=score)
 
-            # Get rank from LeaderboardApp's rank_dict if leaderboard_app is not None
-            if self.leaderboard_app:
-                rank = self.leaderboard_app.rank_dict.get(username, "N/A")
-            else:
-                rank = "N/A"
+            # Get rank from rank_dict if available
+            rank = self.rank_dict.get(username, "N/A")
             self.rank_value.config(text=rank)
         else:
             messagebox.showerror("Error", "User data not found")
 
     def open_leaderboard(self):
-        self.root.destroy()
         root = tk.Tk()
         app = LeaderboardApp(root)
         root.mainloop()
 
-    def open_account(self):
+    def go_home(self):
         self.root.destroy()
-        root = tk.Tk()
-        app = AccountApp(root, self.username)
-        root.mainloop()
-
+        python_executable = sys.executable
+        subprocess.call([python_executable, "homepage.py", self.username])
 
 class LeaderboardApp:
     def __init__(self, root):
@@ -133,48 +129,15 @@ class LeaderboardApp:
             self.tree.insert("", "end", values=(idx, username, score))
             self.rank_dict[username] = idx
 
-
-class AccountApp:
-    def __init__(self, root, username):
-        self.root = root
-        self.root.title("Account Page")
-        self.root.geometry("400x300")
-        self.root.configure(bg="#f0f0f0")
-        
-        self.username = username
-
-        self.db_connection = mysql.connector.connect(
-            host="localhost",
-            user="lavitra",
-            password="1234567890",
-            database="oops_project"
-        )
-        self.db_cursor = self.db_connection.cursor()
-
-        self.load_account_data()
-
-    def load_account_data(self):
-        query = "SELECT username, password FROM users WHERE username = %s"
-        self.db_cursor.execute(query, (self.username,))
-        result = self.db_cursor.fetchone()
-        
-        if result:
-            username, password = result
-
-            self.username_label = tk.Label(self.root, text=f"Username: {username}", bg="#f0f0f0")
-            self.username_label.pack(pady=10)
-            
-            self.password_label = tk.Label(self.root, text=f"Password: {password}", bg="#f0f0f0")
-            self.password_label.pack(pady=10)
-        else:
-            messagebox.showerror("Error", "User data not found")
-
-
 if __name__ == "__main__":
-    root = tk.Tk()
-    username = "lapi"  # Replace with actual username as needed
-    leaderboard_app = LeaderboardApp(tk.Tk())
-    root.destroy()  # Destroy the temporary leaderboard window
-    root = tk.Tk()
-    app = DashboardApp(root, username, leaderboard_app)
-    root.mainloop()
+    username = sys.argv[1] if len(sys.argv) > 1 else "User"  # Get the username from the command line arguments
+
+    # Load leaderboard first to get rank_dict
+    leaderboard_root = tk.Tk()
+    leaderboard_app = LeaderboardApp(leaderboard_root)
+    leaderboard_root.withdraw()  # Hide the leaderboard window after loading the data
+
+    # Initialize dashboard with the leaderboard rank_dict
+    dashboard_root = tk.Tk()
+    app = DashboardApp(dashboard_root, username, leaderboard_app.rank_dict)
+    dashboard_root.mainloop()

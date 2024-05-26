@@ -30,7 +30,7 @@ class QuizApp:
         self.total_questions = len(self.questions)  # Set the total number of questions
         
         # Create a Canvas widget for the background image
-        self.canvas = tk.Canvas(root, width=800, height=600)
+        self.canvas = tk.Canvas(root, width=800, height=450)
         self.canvas.pack()
         self.background_image = tk.PhotoImage(file="/home/lavitra/Desktop/coding/python/Python-Quiz/tim1.png")
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.background_image)
